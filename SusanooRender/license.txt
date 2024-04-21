@@ -1,0 +1,11 @@
+Model Information:
+* title:	Perfect Susanoo
+* source:	https://sketchfab.com/3d-models/perfect-susanoo-41e8fe2cab25423c966cc2ab2d909314
+* author:	serienreviewer (https://sketchfab.com/serienreviewer)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Perfect Susanoo" (https://sketchfab.com/3d-models/perfect-susanoo-41e8fe2cab25423c966cc2ab2d909314) by serienreviewer (https://sketchfab.com/serienreviewer) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

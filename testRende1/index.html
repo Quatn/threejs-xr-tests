@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<head>
+	<meta lang="en">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<script src='../stemkoskiExample/js/three.js'></script>
+</head>
+<body>
+	<script>
+		var scene, camera, renderer, clock, deltaTime, totalTime;
+		let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+		scene.add( ambientLight );
+
+		camera = new THREE.Camera();
+		scene.add(camera);
+
+		renderer = new THREE.WebGLRenderer({
+			antialias : true,
+			alpha: true
+		});
+		renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+		renderer.setSize( 640, 480 );
+		renderer.domElement.style.position = 'absolute'
+		renderer.domElement.style.top = '0px'
+		renderer.domElement.style.left = '0px'
+		document.body.appendChild( renderer.domElement );
+
+		clock = new THREE.Clock();
+		deltaTime = 0;
+		totalTime = 0;
+	</script>
+</body>

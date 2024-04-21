@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js xr - cubes</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> xr - interactive cubes
+		</div>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./three.module.js",
+					"three/addons/": "./"
+				}
+			}
+		</script>
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+			import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+			import { XRButton } from 'three/addons/webxr/XRButton.js';
+			import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+			import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';			
+			import { Font } from 'three/addons/loaders/FontLoader.js';
+
+			const clock = new THREE.Clock();
+
+			let container;
+			let camera, scene, raycaster, renderer;
+
+			let room;
+
+			let controller, controllerGrip;
+			let INTERSECTED;
+
+			init();
+			animate();
+
+			function init() {
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x505050 );
+
+				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 10 );
+				camera.position.set( 0, 1.6, 3 );
+				scene.add( camera );
+
+				room = new THREE.LineSegments(
+					new BoxLineGeometry( 6, 6, 6, 10, 10, 10 ).translate( 0, 3, 0 ),
+					new THREE.LineBasicMaterial( { color: 0xbcbcbc } )
+				);
+				scene.add( room );
+
+				scene.add( new THREE.HemisphereLight( 0xa5a5a5, 0x898989, 3 ) );
+
+				const light = new THREE.DirectionalLight( 0xffffff, 3 );
+				light.position.set( 1, 1, 1 ).normalize();
+				scene.add( light );
+
+				const geometry = new THREE.BoxGeometry( 0.15, 0.15, 0.15 );
+
+				let VCRFont = new Font();
+				VCRFont.data = undefined;
+				addText("F", 0x024ff4, -3., 1, -3);
+				addText("P", 0xf45702, -1, 1, -3);
+				addText("T", 0x02f412, 1, 1, -3);
+				addText("U", 0xffffff, 3, 1, -3);
+
+
+				const mLoader = new GLTFLoader();
+				mLoader.load( './scene.gltf', function ( gltf ) {
+					//gltf.scene.position = new THREE.Vector3(0, -1000, 0);
+					console.log( gltf );
+					gltf.scene.position.y = 1;
+					gltf.scene.position.z = 1.2;
+					gltf.scene.scale.x = 3
+					gltf.scene.scale.y = 3
+					gltf.scene.scale.z = 3
+					room.add( gltf.scene );
+				});
+
+//				for ( let i = 0; i < 100; i ++ ) {
+//
+//					const object = new THREE.Mesh( geometry, new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } ) );
+//
+//					object.position.x = 0;
+//					object.position.y = 0;
+//					object.position.z = i * 2;
+//
+//					object.rotation.x = 0;
+//					object.rotation.y = 0;
+//					object.rotation.z = 0;
+//
+//					object.scale.x = 1;
+//					object.scale.y = 1;
+//					object.scale.z = 1;
+//
+//					object.userData.velocity = new THREE.Vector3();
+//					object.userData.velocity.x = 0;
+//					object.userData.velocity.y = 0;
+//					object.userData.velocity.z = 0;
+//
+//					room.add( object );
+//				}
+
+//				for (let i = 0; i < 100; i++) {
+//					addText(i % 2 + "", i + 16776960, 0, 0.2, i * 2);
+//				}
+
+				raycaster = new THREE.Raycaster();
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.xr.enabled = true;
+				container.appendChild( renderer.domElement );
+
+				//
+
+				function onSelectStart() {
+
+					this.userData.isSelecting = true;
+
+				}
+
+				function onSelectEnd() {
+
+					this.userData.isSelecting = false;
+
+				}
+
+				controller = renderer.xr.getController( 0 );
+				controller.addEventListener( 'selectstart', onSelectStart );
+				controller.addEventListener( 'selectend', onSelectEnd );
+				controller.addEventListener( 'connected', function ( event ) {
+
+					this.add( buildController( event.data ) );
+
+				} );
+				controller.addEventListener( 'disconnected', function () {
+
+					this.remove( this.children[ 0 ] );
+
+				} );
+				scene.add( controller );
+
+				const controllerModelFactory = new XRControllerModelFactory();
+
+				controllerGrip = renderer.xr.getControllerGrip( 0 );
+				controllerGrip.add( controllerModelFactory.createControllerModel( controllerGrip ) );
+				scene.add( controllerGrip );
+
+				window.addEventListener( 'resize', onWindowResize );
+
+				//
+
+				document.body.appendChild( XRButton.createButton( renderer, { 'optionalFeatures': [ 'depth-sensing'] } ) );
+
+
+				async function loadFont(text) {
+					const loader = new FontLoader();
+					let Out = undefined;
+
+					let prom = new Promise( function(res, rej) {
+						loader.load('./VCROSDMono.json', function ( response ) {
+							//testFont.data = response.data;
+
+							//Out.data = response.data;
+							// console.log(response.data);
+							VCRFont = response;
+							Out = createText(text, response);
+							//Out = response
+							//console.log("t " + lock);
+							//console.log(Out.data);
+							//console.log("t " + lock);
+							//lock = 1;
+							//refreshText();
+						});
+						setTimeout(() => res(Out), 100);
+					});
+					return prom;
+				}
+
+				async function createText(text, font) {
+					return new TextGeometry(text, {font, 
+						size: 1,
+						depth: 0.2,
+						curveSegments: 1,
+
+						bevelThickness: 2,
+						bevelSize: 1.5,
+						bevelEnabled: false
+					 });
+				}
+
+				async function addText(text, color, x, y, z) {
+					//let testLock = 0;
+					let displayText = undefined;
+
+					if (VCRFont.data == undefined) {
+						//console.log("Out.data: " + Out.data);
+						//displayText = 
+						//console.log("???");
+						await loadFont(text).then(result => displayText = result);
+						//console.log("abc");
+						//console.log(displayText);
+					}
+					else {
+						displayText = createText(text, VCRFont);
+					}
+
+					//console.log("2 " + testFont.type);
+					//console.log("1 " + testLock);
+					//console.log("2 " + testFont.data);
+					const textGeo = displayText;
+
+					const testText = new THREE.Mesh( textGeo, new THREE.MeshLambertMaterial( { color: color } ) );
+					testText.position.x = x;
+					testText.position.y = y;
+					testText.position.z = z;
+
+					testText.rotation.x = 0;
+					testText.rotation.y = 0;
+					testText.rotation.z = 0;
+
+					testText.scale.x = 1;
+					testText.scale.y = 1;
+					testText.scale.z = 1;
+
+					testText.userData.velocity = new THREE.Vector3();
+					testText.userData.velocity.x = 0;
+					testText.userData.velocity.y = 0;
+					testText.userData.velocity.z = 0;
+
+					console.log(testText);
+					room.add( testText );
+				}
+			}
+
+			async function addModel() {
+				const mLoader = new GLTFLoader();
+				loader.load( 'path/to/model.glb', function ( gltf ) {
+					room.add( gltf.scene );
+					console.log( gltf.isObject3D );
+				});
+			}
+
+
+			function buildController( data ) {
+
+				let geometry, material;
+
+				switch ( data.targetRayMode ) {
+
+					case 'tracked-pointer':
+
+						geometry = new THREE.BufferGeometry();
+						geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+						geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+
+						material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+
+						return new THREE.Line( geometry, material );
+
+					case 'gaze':
+
+						geometry = new THREE.RingGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+						material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
+						return new THREE.Mesh( geometry, material );
+
+				}
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function animate() {
+
+				renderer.setAnimationLoop( render );
+
+			}
+
+			function render() {
+				const delta = clock.getDelta() * 60;
+
+				if ( controller.userData.isSelecting === true && false) {
+
+					const cube = room.children[ 0 ];
+					room.remove( cube );
+
+					cube.position.copy( controller.position );
+					cube.userData.velocity.x = ( Math.random() - 0.5 ) * 0.02 * delta;
+					cube.userData.velocity.y = ( Math.random() - 0.5 ) * 0.02 * delta;
+					cube.userData.velocity.z = ( Math.random() * 0.01 - 0.05 ) * delta;
+					cube.userData.velocity.applyQuaternion( controller.quaternion );
+					room.add( cube );
+
+				}
+
+				// find intersections
+
+				raycaster.setFromXRController( controller );
+
+				const intersects = raycaster.intersectObjects( room.children, false );
+
+				if ( intersects.length > 0 ) {
+
+					if ( INTERSECTED != intersects[ 0 ].object ) {
+
+						if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+						INTERSECTED = intersects[ 0 ].object;
+						INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+						INTERSECTED.material.emissive.setHex( 0xff0000 );
+
+					}
+
+				} else {
+
+					if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+
+					INTERSECTED = undefined;
+
+				}
+				renderer.render( scene, camera );
+
+			}
+
+			// Keep cubes inside room
+			function flingCubeBack() {
+				for ( let i = 0; i < room.children.length; i ++ ) {
+
+					const cube = room.children[ i ];
+
+					cube.userData.velocity.multiplyScalar( 1 - ( 0.001 * delta ) );
+
+					cube.position.add( cube.userData.velocity );
+
+					if ( cube.position.x < - 3 || cube.position.x > 3 ) {
+
+						cube.position.x = THREE.MathUtils.clamp( cube.position.x, - 3, 3 );
+						cube.userData.velocity.x = - cube.userData.velocity.x;
+
+					}
+
+					if ( cube.position.y < 0 || cube.position.y > 6 ) {
+
+						cube.position.y = THREE.MathUtils.clamp( cube.position.y, 0, 6 );
+						cube.userData.velocity.y = - cube.userData.velocity.y;
+
+					}
+
+					if ( cube.position.z < - 3 || cube.position.z > 3 ) {
+
+						cube.position.z = THREE.MathUtils.clamp( cube.position.z, - 3, 3 );
+						cube.userData.velocity.z = - cube.userData.velocity.z;
+
+					}
+
+					cube.rotation.x += cube.userData.velocity.x * 2 * delta;
+					cube.rotation.y += cube.userData.velocity.y * 2 * delta;
+					cube.rotation.z += cube.userData.velocity.z * 2 * delta;
+
+				}
+			}
+
+		</script>
+	</body>
+</html>
