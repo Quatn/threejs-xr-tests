@@ -1,0 +1,312 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 4087,
+      "max": [
+        0.7725498080253601,
+        0.4206222891807556,
+        3.6068506240844727
+      ],
+      "min": [
+        -0.42723923921585083,
+        -0.5847262144088745,
+        -2.149420976638794
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 49044,
+      "componentType": 5126,
+      "count": 4087,
+      "max": [
+        0.996543824672699,
+        0.9997816681861877,
+        0.9987815022468567
+      ],
+      "min": [
+        -0.9995359182357788,
+        -0.9997832179069519,
+        -0.9716687798500061
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 4087,
+      "max": [
+        1.0,
+        1.0
+      ],
+      "min": [
+        -3.0547380447387695e-07,
+        0.01000000536441803
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 22236,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 98088,
+      "componentType": 5126,
+      "count": 18396,
+      "max": [
+        1.0074660778045654,
+        0.7773784399032593,
+        5.043645858764648
+      ],
+      "min": [
+        -0.9471607208251953,
+        -1.3108880519866943,
+        3.3786704540252686
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 318840,
+      "componentType": 5126,
+      "count": 18396,
+      "max": [
+        0.9999630451202393,
+        0.9999919533729553,
+        0.9996769428253174
+      ],
+      "min": [
+        -0.9998679757118225,
+        -0.9999022483825684,
+        -0.9988612532615662
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 32696,
+      "componentType": 5126,
+      "count": 18396,
+      "max": [
+        1.0000001192092896,
+        1.0000001192092896
+      ],
+      "min": [
+        0.0,
+        0.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 88944,
+      "componentType": 5125,
+      "count": 110208,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "AnnPiskacov (https://sketchfab.com/AndreaPiskacova)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/rose-734a979ff2d942e1921421c98684d1ce",
+      "title": "Rose"
+    },
+    "generator": "Sketchfab-15.61.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 529776,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 179864,
+      "byteOffset": 529776,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 539592,
+      "byteOffset": 709640,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1249232,
+      "uri": "scene.bin"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Material.001",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.00503442,
+          0.0402341,
+          0.0102419,
+          1.0
+        ],
+        "metallicFactor": 0.0
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.203671,
+          0.0183899,
+          0.00952559,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9872229602916879
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Rose_Material.001_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Rose_Material_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 5,
+            "POSITION": 4,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        0.49575018882751465,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.1007865481971516e-16,
+        -0.49575018882751465,
+        0.0,
+        0.0,
+        0.49575018882751465,
+        1.1007865481971516e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.009999999776482582,
+        0.0,
+        0.0,
+        -0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "9dabc4f1be084e4cae0a87a357bd9ba5.fbx"
+    },
+    {
+      "children": [
+        3
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "matrix": [
+        5.688745021820068,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -9.268142038418244e-07,
+        -5.688745021819993,
+        0.0,
+        0.0,
+        5.688745021819993,
+        -9.268142038418244e-07,
+        0.0,
+        4.271430492401123,
+        12.350543975830078,
+        -12.963263511657715,
+        1.0
+      ],
+      "name": "Rose"
+    },
+    {
+      "mesh": 0,
+      "name": "Rose_Material.001_0"
+    },
+    {
+      "mesh": 1,
+      "name": "Rose_Material_0"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

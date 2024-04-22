@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js xr - cubes</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+.console {
+	background-color: black;
+	opacity: 50%;
+}
+		</style>
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> xr - interactive cubes
+		</div>
+
+		<div id="content">
+			<button id="compass" onclick="resetCompass()" style="position: fixed; left: 0; up: 10; height: 30px;">Compass heading: (Click to reset)</button>
+
+			<div style="display: flex; flex-direction: column; justify-content: flex-end; position: fixed; bottom: 0;">
+				<div class="console" id="console3"></div>
+				<div class="console" id="console2"></div>
+				<div class="console" id="console1"></div>
+				<div class="console" id="val"></div>
+			</div>
+
+			<div style="position: fixed; bottom: 100px; height: 30px; width: 100%; display: flex; justify-content: center;">
+				<button id="pathButton" onclick="displayPath()">Display path</button>
+			</div>
+
+			<!--input type="range" min="-180" max="180" value="0" oninput="camY = this.value" style="position: fixed; right: 0; bottom: 0;"-->
+		</div>
+
+		<script>
+			co1 = document.querySelector("#console1");
+			co2 = document.querySelector("#console2");
+			co3 = document.querySelector("#console3");
+			val = document.querySelector("#val");
+			function onScreenConsoleLog(text) {
+				co3.innerHTML = co2.innerHTML;
+				co2.innerHTML = co1.innerHTML;
+				co1.innerHTML = text;
+			}
+
+			function onScreenConsoleVal(name, value) {
+				val.innerHTML = name + ": " + value
+			}
+		</script>
+		
+		<script>
+			var alpha, camY;
+			if(window.DeviceOrientationEvent) {
+				window.addEventListener('deviceorientationabsolute', function(event) {
+					alpha = -event.alpha;
+					document.querySelector("#compass").innerHTML = "Compass heading:  " + alpha.toFixed(2) + "(Click to reset)";
+				});
+			}
+		</script>
+
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./three.module.js",
+					"three/addons/": "./"
+				}
+			}
+		</script>
+		<script type="module" src="script.js"></script>
+
+		<!--button onclick="resetCompass()" style="position: fixed; left: 0; up: 0;">Reset</button-->
+	</body>
+</html>
