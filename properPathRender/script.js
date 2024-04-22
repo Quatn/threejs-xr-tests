@@ -15,7 +15,7 @@ const clock = new THREE.Clock();
 let container;
 let camera, scene, raycaster, renderer;
 
-let room, bubble;
+let room, bubble, interactables;
 
 let controller, controllerGrip;
 
@@ -49,6 +49,7 @@ function init() {
 	scene.add( camera );
 
 	room = new THREE.Group();
+	interactables = new THREE.Group();
 	bubble = new THREE.LineSegments(
 		new SphereGeometry( 5, 14, 7, 0, 6.283185307179586, 3.81389348145801, 2.50070775225748),
 		new THREE.LineBasicMaterial( { color: 0xbcbcbc, linewidth: 2} )
@@ -346,7 +347,7 @@ function render() {
 
 	raycaster.setFromXRController( controller );
 
-	const intersects = raycaster.intersectObjects( room.children, false );
+	const intersects = raycaster.intersectObjects( interactables.children, false );
 
 	if ( intersects.length > 0 ) {
 
@@ -423,6 +424,7 @@ function resetCompass() {
 	//camera.rotation.z = 0;
 	if (renderer.xr.getSession() != undefined) renderer.xr.getSession().end();
 	room.rotation.y = alpha / 180 * Math.PI; //+ ((alpha < -180)? -camera.rotation.y : camera.rotation.y);
+	interactables.rotation.y = room.rotation.y;
 	bubble.rotation.y = room.rotation.y;
 	//renderer.xr.getSession().start();
 	//alert(alpha);
@@ -446,10 +448,10 @@ async function displayPath() {
 				setTimeout(() => res(arrow), 500); //Wait 500ms so that the model can load
 			});
 
-			await prom.then(result => { //Doesn't need to be here, but whatever
-				result.scene.scale.x = 0.05;
-				result.scene.scale.y = 0.05;
-				result.scene.scale.z = 0.05;
+			await prom.then(result => { //Doesn't need to be then, but whatever
+				result.scene.scale.x = 0.1;
+				result.scene.scale.y = 0.2;
+				result.scene.scale.z = 0.1;
 
 				result.scene.traverse((o) => {
 					if (o.isMesh)  {
@@ -459,29 +461,95 @@ async function displayPath() {
 				});
 			} );
 
+			const sphereGeometry = new THREE.SphereGeometry( 0.15, 13, 6 ); 
+			const sphereMaterial = new THREE.MeshLambertMaterial( { color: 0x47eef7 } ); 
+			sphereMaterial.transparent = true;
+			sphereMaterial.opacity = 0.5;
+			const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
+			console.log(sphere)
+
+			const linePoints = [];
+
 			pathObj.path.forEach( function (item, ind) { 
-				let node = arrow.scene.clone();
+				linePoints.push( new THREE.Vector3( item.x, item.y, item.z ) );
+				let node = sphere.clone();
 				node.position.x = item.x;
 				node.position.y = item.y;
 				node.position.z = item.z;
+
 				node.rotation.x = 0;
+				node.rotation.y = 0;
 				node.rotation.z = 0;
 
+				
+
 				if (ind + 1 < pathObj.path.length) {
-					node.rotation.y =  Math.atan2( (pathObj.path[ind + 1].x - item.x), (pathObj.path[ind + 1].z - item.z) ) + Math.PI / 2;
-					onScreenConsoleLog(ind);
+					let distance = Math.sqrt( Math.pow(pathObj.path[ind + 1].x - item.x, 2) + Math.pow(pathObj.path[ind + 1].z - item.z, 2) );
+					let numOfarrows = Math.floor(distance / 3);
+					//let incDis = distance / (numOfarrows + 1);
+					let incDisX = (pathObj.path[ind + 1].x - item.x) / (numOfarrows + 1), incDisZ = (pathObj.path[ind + 1].z - item.z) / (numOfarrows + 1);
+
+					let angle =  Math.atan2( (pathObj.path[ind + 1].x - item.x), (pathObj.path[ind + 1].z - item.z) ) + Math.PI / 2;
+					console.log(numOfarrows);
+					for (let i = 0; i < numOfarrows; i++) {
+						let arrowCp = arrow.scene.clone();
+
+						arrowCp.position.x = item.x + incDisX * (i + 1);
+						arrowCp.position.y = item.y;
+						arrowCp.position.z = item.z + incDisZ * (i + 1);
+
+						arrowCp.rotation.x = 0;
+						arrowCp.rotation.y = angle;
+						arrowCp.rotation.z = 0;
+
+						room.add( arrowCp );
+					}
+					//onScreenConsoleLog(ind);
 					//console.log((pathObj.path[ind + 1].x - item.x) / (pathObj.path[ind + 1].z - item.z));
 					//console.log((Math.atan2( (pathObj.path[ind + 1].x - item.x), (pathObj.path[ind + 1].z - item.z) ) * 180) / Math.PI)
 				}
 				else {
-					node.rotation.y =  Math.atan2( (pathObj.endPoint.x - item.x), (pathObj.endPoint.z - item.z) ) + Math.PI / 2;
+					let distance = Math.sqrt( Math.pow(pathObj.endPoint.x - item.x, 2) + Math.pow(pathObj.endPoint.z - item.z, 2) );
+					let numOfarrows = Math.floor(distance / 3);
+					//let incDis = distance / (numOfarrows + 1);
+					let incDisX = (pathObj.endPoint.x - item.x) / (numOfarrows + 1), incDisZ = (pathObj.endPoint.z - item.z) / (numOfarrows + 1);
+
+					let angle =  Math.atan2( (pathObj.endPoint.x - item.x), (pathObj.endPoint.z - item.z) ) + Math.PI / 2;
+					console.log(numOfarrows);
+					for (let i = 0; i < numOfarrows; i++) {
+						let arrowCp = arrow.scene.clone();
+
+						arrowCp.position.x = item.x + incDisX * (i + 1);
+						arrowCp.position.y = item.y;
+						arrowCp.position.z = item.z + incDisZ * (i + 1);
+
+						arrowCp.rotation.x = 0;
+						arrowCp.rotation.y = angle;
+						arrowCp.rotation.z = 0;
+
+						room.add( arrowCp );
+					}
 				}
 
 				room.add( node );
 			});
-			
+
+			linePoints.push( new THREE.Vector3( pathObj.endPoint.x, 0, pathObj.endPoint.z ) );
+
+			const lineGeometry = new THREE.BufferGeometry().setFromPoints( linePoints );
+
+			const lineMaterial = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+
+			const line = new THREE.Line( lineGeometry, lineMaterial );
+
+			console.log(line);
+
+
 			addModel('./models/rose/scene.gltf', modelLoader, { position: pathObj.endPoint, scale: {x: 3, y: 3, z: 3} })
 
+			room.add( line );
+
+			onScreenConsoleLog("Done loading path");
 
 		})
 		.catch((e) => console.error(e))
