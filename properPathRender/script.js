@@ -1,3 +1,12 @@
+var alpha, alpha0;
+if(window.DeviceOrientationEvent) {
+	window.addEventListener('deviceorientationabsolute', function(event) {
+		alpha = -event.alpha;
+		document.querySelector("#compass").innerHTML = "Compass heading:  " + -alpha.toFixed(0) + " (Click to reset)";
+	});
+}
+
+
 import * as THREE from 'three';
 
 import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
@@ -15,13 +24,14 @@ const clock = new THREE.Clock();
 let container;
 let camera, scene, raycaster, renderer;
 
-let room, bubble, interactables;
+let room, pathGroup, bubble, interactables;
 
 let controller, controllerGrip;
 
 let INTERSECTED;
 
 let path;
+let alert = 0;
 
 const fontLoader = new FontLoader();
 let VCRFontInfo = {fontObj: new Font(), fontLoader: fontLoader, fontPath: "./VCROSDMono.json"}; //Font for 3D text models
@@ -33,6 +43,8 @@ modelLoader = new GLTFLoader();
 let startButton;
 
 let fControl; //test FirstPersonControls to see if it resets the camera's position
+
+let camY, camY0;
 
 init();
 animate();
@@ -49,12 +61,14 @@ function init() {
 	scene.add( camera );
 
 	room = new THREE.Group();
+	pathGroup = new THREE.Group();
 	interactables = new THREE.Group();
 	bubble = new THREE.LineSegments(
 		new SphereGeometry( 5, 14, 7, 0, 6.283185307179586, 3.81389348145801, 2.50070775225748),
 		new THREE.LineBasicMaterial( { color: 0xbcbcbc, linewidth: 2} )
 	);
 	scene.add( room );
+	scene.add( pathGroup );
 	scene.add( bubble )
 
 	scene.add( new THREE.HemisphereLight( 0xa5a5a5, 0x898989, 3 ) );
@@ -136,7 +150,11 @@ function init() {
 		startButton = XRButton.createButton( renderer, { 'optionalFeatures': [ 'depth-sensing', 'dom-overlay'], domOverlay: {root: document.getElementById('content')} }, resetCompass);
 	document.body.appendChild( startButton );
 
-	console.log(bubble);
+	//console.log(room);
+	
+	camY = camera.rotation.y;
+	camY0 = camY;
+	alpha0 = alpha;
 }
 
 async function loadFontAndCreateTextPromise(text, fontLoader, pathToFont, fontObj) { //Funny code to solve some js shenanigans I wasn't able to solve
@@ -308,17 +326,40 @@ function onWindowResize() {
 function render() {
 	const delta = clock.getDelta() * 60;
 	//resetCompass();
-	//onScreenConsoleLog("Room: " + room.rotation.y);
+	//2onScreenConsoleLog("Room: " + room.rotation.y);
 	//onScreenConsoleLog("Scene: " + scene.rotation.y);
-	onScreenConsoleVal("Cam Y", camera.rotation.y);
+	//onScreenConsoleVal("Cam Y", camera.rotation.y);
 	//camera.rotation.x = 0;
 	//camera.rotation.z = 0;
 	//camera.rotation.y = window.camY * Math.PI / 360;
-	let q = camera.quaternion;
 	//let CamEulerY = 2 * Math.atan();
 	//onScreenConsoleLog("Cam x: " + camera.rotation.x);
 	//onScreenConsoleLog("Cam y: " + camera.rotation.y);
 	//onScreenConsoleLog("Cam z: " + camera.rotation.z);
+	
+	if (alert > 6) trackingWarnOn();
+
+	camY = camera.rotation.y;
+	if (renderer.xr.getSession() != undefined && camY0 != undefined && alpha0 != undefined) {
+		onScreenConsoleVal1("delta Cam Y", (camY - camY0) );
+		onScreenConsoleVal2("delta alpha", (alpha - alpha0).toFixed(2) );
+
+		if (Math.abs(camY - camY0) == 0) {
+			let deltaAlpha = Math.abs(alpha - alpha0);
+			if (deltaAlpha > 3) {
+				onScreenConsoleLog("Warning2");
+				alert += 10;
+			}
+			else if (deltaAlpha > 0.8) {
+				onScreenConsoleLog("Warning");
+				alert += 1;
+			}
+
+		}
+	}
+	camY0 = camY;
+	alpha0 = alpha;
+
 
 	//room.rotation.y = alpha / 360 * Math.PI;
 	//
@@ -417,33 +458,71 @@ function resetCompass() {
 	//onScreenConsoleLog(camera);
 	//camera.quaternion.set(0, 0, 0, camera.quaternion.w);
 	//fControl.lookAt(1, 1, -3);
-	onScreenConsoleLog("Compass Reset")
+	onScreenConsoleLog("Compass Reset Done")
 	//sButton.onclick();
 	//camera.rotation.x = 0;
 	//camera.rotation.y = 0;
 	//camera.rotation.z = 0;
 	if (renderer.xr.getSession() != undefined) renderer.xr.getSession().end();
+	if (alert > 6) {
+		alert = 0;
+		trackingWarnOff();
+	}
 	room.rotation.y = alpha / 180 * Math.PI; //+ ((alpha < -180)? -camera.rotation.y : camera.rotation.y);
+	pathGroup.rotation.y = room.rotation.y;
 	interactables.rotation.y = room.rotation.y;
 	bubble.rotation.y = room.rotation.y;
+
 	//renderer.xr.getSession().start();
 	//alert(alpha);
 }
 
 window.resetCompass = resetCompass;
 
+function rotateY(toRot = {x: 0, y: 0, z: 0}, angle) {
+	let c = Math.cos(angle), s = Math.sin(angle);
+	return {x: toRot.x * c + toRot.z * s, y: toRot.y, z: toRot.z * c - toRot.x * s};
+}
+
 async function displayPath() {
-	fetch("./path.json")
+	let in1 = document.querySelector("#startPoint"), in2 = document.querySelector("#endPoint");
+	let startId = in1.value, endId = in2.value;
+	const floorHeight = 3;
+	console.log(startId + " " + endId);
+	pathGroup.children = [];
+	if (startId.length > 0 && endId.length > 0) {
+		fetch("https://finnsapi.developvn.click/api/ShortestPath/" + startId + "\/" + endId + "\/")
 		.then((res) =>  res.text())
 		.then(async (text) => {
-			let pathObj = JSON.parse(text);
-			//console.log(pathObj.path)
+			let apiYield = JSON.parse(text);
+			console.log(apiYield)
+			let pathLength = apiYield.length;
+			let alphaAngle = (360 - 309) / 180 * Math.PI;
+
+
+			let parseStart = JSON.parse(apiYield[0].locationWeb);
+			let parseEnd = JSON.parse(apiYield[pathLength - 1].locationWeb);
+			let pathObj = {
+				startPoint: {x: parseStart[0], y: apiYield[0].floorId, z: parseStart[1]},
+				endPoint: {x: parseEnd[0], y: apiYield[pathLength - 1].floorId, z: parseEnd[0]},
+				path: []
+			}
+
+			for (let i = 0; i < pathLength; i++) {
+				let parse = JSON.parse(apiYield[i].locationWeb);
+				//console.log(parse)
+				pathObj.path.push( rotateY({x: parse[0] - pathObj.startPoint.x, y: floorHeight * (apiYield[i].floorId - pathObj.startPoint.y), z: - parse[1] + pathObj.startPoint.z}, alphaAngle) )
+			}
+			console.log(pathObj.path)
+			
+			onScreenConsoleVal1("From", apiYield[0].mappointName);
+			onScreenConsoleVal2("To", apiYield[pathLength - 1].mappointName);
 
 			let arrow;
 			let prom = new Promise( function(res, rej) {
 				modelLoader.load( "./models/arrow/scene.gltf", function ( gltf ) {
 					arrow = gltf;
-					console.log(arrow);
+					//console.log(arrow);
 				});
 				setTimeout(() => res(arrow), 500); //Wait 500ms so that the model can load
 			});
@@ -461,18 +540,24 @@ async function displayPath() {
 				});
 			} );
 
+			console.log(arrow);
+
 			const sphereGeometry = new THREE.SphereGeometry( 0.15, 13, 6 ); 
 			const sphereMaterial = new THREE.MeshLambertMaterial( { color: 0x47eef7 } ); 
+			const sphereMaterialYel = new THREE.MeshLambertMaterial( { color: 0xfcdd16 } ); 
 			sphereMaterial.transparent = true;
 			sphereMaterial.opacity = 0.5;
+			sphereMaterialYel.transparent = true;
+			sphereMaterialYel.opacity = 0.5;
 			const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial ); 
-			console.log(sphere)
+			const sphere1 = new THREE.Mesh( sphereGeometry, sphereMaterialYel ); 
+			//console.log(sphere)
 
 			const linePoints = [];
 
 			pathObj.path.forEach( function (item, ind) { 
 				linePoints.push( new THREE.Vector3( item.x, item.y, item.z ) );
-				let node = sphere.clone();
+				let node = (item.y < floorHeight)? sphere.clone(): sphere1.clone();
 				node.position.x = item.x;
 				node.position.y = item.y;
 				node.position.z = item.z;
@@ -490,7 +575,7 @@ async function displayPath() {
 					let incDisX = (pathObj.path[ind + 1].x - item.x) / (numOfarrows + 1), incDisZ = (pathObj.path[ind + 1].z - item.z) / (numOfarrows + 1);
 
 					let angle =  Math.atan2( (pathObj.path[ind + 1].x - item.x), (pathObj.path[ind + 1].z - item.z) ) + Math.PI / 2;
-					console.log(numOfarrows);
+					//console.log(numOfarrows);
 					for (let i = 0; i < numOfarrows; i++) {
 						let arrowCp = arrow.scene.clone();
 
@@ -502,39 +587,17 @@ async function displayPath() {
 						arrowCp.rotation.y = angle;
 						arrowCp.rotation.z = 0;
 
-						room.add( arrowCp );
+						pathGroup.add( arrowCp );
 					}
 					//onScreenConsoleLog(ind);
 					//console.log((pathObj.path[ind + 1].x - item.x) / (pathObj.path[ind + 1].z - item.z));
 					//console.log((Math.atan2( (pathObj.path[ind + 1].x - item.x), (pathObj.path[ind + 1].z - item.z) ) * 180) / Math.PI)
 				}
-				else {
-					let distance = Math.sqrt( Math.pow(pathObj.endPoint.x - item.x, 2) + Math.pow(pathObj.endPoint.z - item.z, 2) );
-					let numOfarrows = Math.floor(distance / 3);
-					//let incDis = distance / (numOfarrows + 1);
-					let incDisX = (pathObj.endPoint.x - item.x) / (numOfarrows + 1), incDisZ = (pathObj.endPoint.z - item.z) / (numOfarrows + 1);
 
-					let angle =  Math.atan2( (pathObj.endPoint.x - item.x), (pathObj.endPoint.z - item.z) ) + Math.PI / 2;
-					console.log(numOfarrows);
-					for (let i = 0; i < numOfarrows; i++) {
-						let arrowCp = arrow.scene.clone();
-
-						arrowCp.position.x = item.x + incDisX * (i + 1);
-						arrowCp.position.y = item.y;
-						arrowCp.position.z = item.z + incDisZ * (i + 1);
-
-						arrowCp.rotation.x = 0;
-						arrowCp.rotation.y = angle;
-						arrowCp.rotation.z = 0;
-
-						room.add( arrowCp );
-					}
-				}
-
-				room.add( node );
+				pathGroup.add( node );
 			});
 
-			linePoints.push( new THREE.Vector3( pathObj.endPoint.x, 0, pathObj.endPoint.z ) );
+			//linePoints.push( new THREE.Vector3( pathObj.endPoint.x, 0, pathObj.endPoint.z ) );
 
 			const lineGeometry = new THREE.BufferGeometry().setFromPoints( linePoints );
 
@@ -542,17 +605,57 @@ async function displayPath() {
 
 			const line = new THREE.Line( lineGeometry, lineMaterial );
 
-			console.log(line);
+			//console.log(line);
 
 
 			addModel('./models/rose/scene.gltf', modelLoader, { position: pathObj.endPoint, scale: {x: 3, y: 3, z: 3} })
 
-			room.add( line );
+			pathGroup.add( line );
 
 			onScreenConsoleLog("Done loading path");
-
+			
+			console.log(room);
 		})
 		.catch((e) => console.error(e))
+	}
+	else {
+		onScreenConsoleLog("<font color=\"\#FF0000\">Please input both start point and end point</font>");
+	}
+}
+
+
+async function displayPath1() {
+	let in1 = document.querySelector("#startPoint"), in2 = document.querySelector("#endPoint");
+	let startId = in1.value, endId = in2.value;
+	console.log(startId + " " + endId);
+	if (startId.length > 0 && endId.length > 0) {
+		fetch("https://vincture.csproject.org/api/ShortestPath/" + startId + "\/" + endId + "\/")
+			.then((res) =>  res.text())
+			.then(async (text) => {
+				let apiYield = JSON.parse(text);
+				let pathLength = apiYield.length;
+
+				let parseStart = JSON.parse(apiYield[0].locationWeb);
+				let parseEnd = JSON.parse(apiYield[pathLength - 1].locationWeb);
+				let pathObj = {
+					startPoint: {x: parseStart[0], y: apiYield[0].floorId, z: parseStart[1]},
+					endPoint: {x: parseEnd[0], y: apiYield[pathLength - 1].floorId, z: parseEnd[0]},
+					path: []
+				}
+
+				for (let i = 0; i < pathLength; i++) {
+					let parse = JSON.parse(apiYield[i].locationWeb);
+					console.log(parse)
+					pathObj.path.push( {x: parse[0] - pathObj.startPoint.x, y: apiYield[i].floorId - pathObj.startPoint.y, z: parse[1] - pathObj.startPoint.z} )
+				}
+				console.log(apiYield);
+				console.log(pathObj);
+			})
+			.catch((e) => console.error(e))
+		}
+	else {
+		onScreenConsoleLog("<font color=\"\#FF0000\">Please input both start point and end point</font>");
+	}
 }
 
 window.displayPath = displayPath;

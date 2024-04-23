@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js xr - cubes</title>
+		<title>Finns FPT Indoor Navigation System</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 		<link type="text/css" rel="stylesheet" href="main.css">
@@ -15,49 +15,146 @@
 	<body>
 
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> xr - interactive cubes
+			FinNS FPT Indoor Navigation System
 		</div>
 
 		<div id="content">
-			<button id="compass" onclick="resetCompass()" style="position: fixed; left: 0; up: 10; height: 30px;">Compass heading: (Click to reset)</button>
 
 			<div style="display: flex; flex-direction: column; justify-content: flex-end; position: fixed; bottom: 0;">
 				<div class="console" id="console3"></div>
 				<div class="console" id="console2"></div>
 				<div class="console" id="console1"></div>
-				<div class="console" id="val"></div>
+				<div class="console" id="val1" style="color: yellow;"></div>
+				<div class="console" id="val2" style="color: yellow;"></div>
 			</div>
 
-			<div style="position: fixed; bottom: 100px; height: 30px; width: 100%; display: flex; justify-content: center;">
+			<div style="position: fixed; top: 50px; left: 0px; display: flex; justify-content: center; flex-direction: column;">
+				<select id="startPoint">
+					<option value="0">Select starting point:</option>
+					<optgroup label="Map points are still loading, please wait!"> </optgroup>
+				</select>
+
+				<select id="endPoint">
+					<option value="0">Select end point:</option>
+					<optgroup label="Map points are still loading, please wait!"> </optgroup>
+				</select>
+
+				<br>
+
 				<button id="pathButton" onclick="displayPath()">Display path</button>
+			</div>
+
+			<div id="warnWindow" style="display: none; position: fixed; top: 300px; margin: 0 5%; width: 90%; background-color: black; opacity: 0.5;">
+				<h1 style="text-align: center;">We've encountered some problems trying to regconise the environment around you</h1>
+				<p style="text-align: center;">Please ensure that your camera is unobscured and the environmental lighting around you is adequate, then click the button below to reset the scene to ensure that the most accurate path is rendered</p>
+				<button id="compass" onclick="resetCompass()" style="display: block; max-width: 90%; position: relative; margin: 0 auto; height: 30px;">Compass heading: (Click to reset)</button>
 			</div>
 
 			<!--input type="range" min="-180" max="180" value="0" oninput="camY = this.value" style="position: fixed; right: 0; bottom: 0;"-->
 		</div>
 
 		<script>
+			function addZero(i) {
+				if (i < 10) {i = "0" + i}
+				return i;
+			}
+
 			co1 = document.querySelector("#console1");
 			co2 = document.querySelector("#console2");
 			co3 = document.querySelector("#console3");
-			val = document.querySelector("#val");
+			val1 = document.querySelector("#val1");
+			val2 = document.querySelector("#val2");
+			let d = new Date();
+			let h = addZero(d.getHours());
+			let m = addZero(d.getMinutes());
+			let s = addZero(d.getSeconds());
+			let time = h + ":" + m + ":" + s;			
 			function onScreenConsoleLog(text) {
 				co3.innerHTML = co2.innerHTML;
 				co2.innerHTML = co1.innerHTML;
-				co1.innerHTML = text;
+
+				d = new Date();
+				h = addZero(d.getHours());
+				m = addZero(d.getMinutes());
+				s = addZero(d.getSeconds());
+				time = h + ":" + m + ":" + s;
+				co1.innerHTML = "[" + time + "]" + text;
 			}
 
-			function onScreenConsoleVal(name, value) {
-				val.innerHTML = name + ": " + value
+			function onScreenConsoleVal1(name, value) {
+				val1.innerHTML = name + ": " + value
+			}
+
+			function onScreenConsoleVal2(name, value) {
+				val2.innerHTML = name + ": " + value
 			}
 		</script>
-		
+
 		<script>
-			var alpha, camY;
-			if(window.DeviceOrientationEvent) {
-				window.addEventListener('deviceorientationabsolute', function(event) {
-					alpha = -event.alpha;
-					document.querySelector("#compass").innerHTML = "Compass heading:  " + alpha.toFixed(2) + "(Click to reset)";
+		fetch("https://finnsapi.developvn.click/api/mappoints")
+			.then((res) =>  res.text())
+			.then(async (text) => {
+				let apiYield = JSON.parse(text);
+				//console.log(apiYield);
+
+				document.querySelector("#startPoint").innerHTML = "<option value=\"0\">Select starting point:</option> \
+				<optgroup label=\"Alpha:\"></optgroup> \
+					<optgroup id=\"sF1\" label=\"Floor 1\"></optgroup> \
+					<optgroup id=\"sF2\" label=\"Floor 2\"></optgroup> \
+					<optgroup id=\"sF3\" label=\"Floor 3\"></optgroup> \
+					<optgroup id=\"sF4\" label=\"Floor 4\"></optgroup> \
+					<optgroup id=\"sF5\" label=\"Floor 5\"></optgroup> \
+					<optgroup id=\"sF6\" label=\"Floor 6\"></optgroup> \
+				";
+
+				let sFloorElements = [document.querySelector("#sF1"),
+					document.querySelector("#sF2"),
+					document.querySelector("#sF3"),
+					document.querySelector("#sF4"),
+					document.querySelector("#sF5"),
+					document.querySelector("#sF6")];
+
+				document.querySelector("#endPoint").innerHTML = "<option value=\"0\">Select ending point:</option> \
+				<optgroup label=\"Alpha:\"></optgroup> \
+					<optgroup id=\"eF1\" label=\"Floor 1\"></optgroup> \
+					<optgroup id=\"eF2\" label=\"Floor 2\"></optgroup> \
+					<optgroup id=\"eF3\" label=\"Floor 3\"></optgroup> \
+					<optgroup id=\"eF4\" label=\"Floor 4\"></optgroup> \
+					<optgroup id=\"eF5\" label=\"Floor 5\"></optgroup> \
+					<optgroup id=\"eF6\" label=\"Floor 6\"></optgroup> \
+				";
+
+				let eFloorElements = [document.querySelector("#eF1"),
+					document.querySelector("#eF2"),
+					document.querySelector("#eF3"),
+					document.querySelector("#eF4"),
+					document.querySelector("#eF5"),
+					document.querySelector("#eF6")];
+
+				apiYield.forEach((item, ind) => {
+					sFloorElements[item.floorId - 1].innerHTML += "<option value=\"" + item.mapPointId + "\">" + item.mappointName + "</option>";
+					eFloorElements[item.floorId - 1].innerHTML += "<option value=\"" + item.mapPointId + "\">" + item.mappointName + "</option>";
 				});
+			})
+			.catch((e) => console.error(e))
+		</script>
+
+		<script>
+			let warn = false;
+			let warnWindow = document.querySelector("#warnWindow");
+
+			function trackingWarnOn() {
+				if (!warn) {
+					warnWindow.style.display = "block";
+					warn = true;
+				}
+			}
+
+			function trackingWarnOff() {
+				if (warn) {
+					warnWindow.style.display = "none";
+					warn = false;
+				}
 			}
 		</script>
 
@@ -73,5 +170,7 @@
 		<script type="module" src="script.js"></script>
 
 		<!--button onclick="resetCompass()" style="position: fixed; left: 0; up: 0;">Reset</button-->
+		
+		<span style="position: fixed; bottom: 0; left: 0;">Made with <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a></span>
 	</body>
 </html>
