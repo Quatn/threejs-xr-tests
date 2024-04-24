@@ -249,6 +249,31 @@ async function addModel(path, modelLoader, init = { position: {x: 0, y: 0, z: 0}
 	});
 }
 
+
+//I ain't gonna waste time here
+async function addModelOnPath(path, modelLoader, init = { position: {x: 0, y: 0, z: 0},  rotation: {x: 0, y: 0, z:0}, scale: {x: 0, y: 0, z:0}} ) {
+	if (init.position == undefined) init.position = {x: 0, y: 0, z: 0}
+	if (init.rotation == undefined) init.rotation = {x: 0, y: 0, z: 0}
+	if (init.scale == undefined) init.scale = {x: 1, y: 1, z: 1}
+
+	modelLoader.load( path, function ( gltf ) {
+		let scene = gltf.scene;
+		scene.position.x = init.position.x;
+		scene.position.y = init.position.y;
+		scene.position.z = init.position.z;
+
+		scene.rotation.x = init.rotation.x;
+		scene.rotation.y = init.rotation.y;
+		scene.rotation.z = init.rotation.z;
+
+		scene.scale.x = init.scale.x;
+		scene.scale.y = init.scale.y;
+		scene.scale.z = init.scale.z;
+
+		pathGroup.add( scene );
+	});
+}
+
 async function addModelWithOpacity(path, modelLoader, init = { position: {x: 0, y: 0, z: 0},  rotation: {x: 0, y: 0, z:0}, scale: {x: 0, y: 0, z:0}}, opacity) {
 	if (init.position == undefined) init.position = {x: 0, y: 0, z: 0}
 	if (init.rotation == undefined) init.rotation = {x: 0, y: 0, z: 0}
@@ -608,7 +633,7 @@ async function displayPath() {
 			//console.log(line);
 
 
-			addModel('./models/rose/scene.gltf', modelLoader, { position: pathObj.endPoint, scale: {x: 3, y: 3, z: 3} })
+			addModelOnPath('./models/map_point/scene.gltf', modelLoader, { position: pathObj.path[pathLength - 1], scale: {x: 0.1, y: 0.1, z: 0.1} })
 
 			pathGroup.add( line );
 

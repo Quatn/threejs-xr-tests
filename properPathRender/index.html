@@ -6,10 +6,16 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 		<link type="text/css" rel="stylesheet" href="main.css">
 		<style>
-.console {
-	background-color: black;
-	opacity: 50%;
-}
+			.console {
+				background-color: black;
+				opacity: 50%;
+			}
+			.sel {
+				height: 50px;
+				min-width: 259px;
+				background-color: #0492a5;
+				color: white;
+			}
 		</style>
 	</head>
 	<body>
@@ -20,7 +26,8 @@
 
 		<div id="content">
 
-			<div style="display: flex; flex-direction: column; justify-content: flex-end; position: fixed; bottom: 0;">
+		<!--Change display to flex for console-->
+			<div style="display: none; flex-direction: column; justify-content: flex-end; position: fixed; bottom: 0;">
 				<div class="console" id="console3"></div>
 				<div class="console" id="console2"></div>
 				<div class="console" id="console1"></div>
@@ -28,13 +35,15 @@
 				<div class="console" id="val2" style="color: yellow;"></div>
 			</div>
 
-			<div style="position: fixed; top: 50px; left: 0px; display: flex; justify-content: center; flex-direction: column;">
-				<select id="startPoint">
+			<button id="selButton" onclick="toggleSelDiv()" style="position: fixed; display: inline-block; top: 5px; left: 5px; height: 40px; width: 40px; font-size: 38px; padding: 0;"><p style="margin: 0; margin-top: -5px;">⇱</p></button>
+
+			<div id="selDiv" style="position: fixed; top: 50px; left: 0px; display: flex; justify-content: center; flex-direction: column;">
+				<select class="sel" id="startPoint">
 					<option value="0">Select starting point:</option>
 					<optgroup label="Map points are still loading, please wait!"> </optgroup>
 				</select>
 
-				<select id="endPoint">
+				<select class="sel" id="endPoint">
 					<option value="0">Select end point:</option>
 					<optgroup label="Map points are still loading, please wait!"> </optgroup>
 				</select>
@@ -53,6 +62,26 @@
 			<!--input type="range" min="-180" max="180" value="0" oninput="camY = this.value" style="position: fixed; right: 0; bottom: 0;"-->
 		</div>
 
+		<!-- Script for the path select div -->
+		<script>
+			let selDiv = document.querySelector("#selDiv");
+			let selButton = document.querySelector("#selButton");
+
+			function toggleSelDiv() {
+				if (selDiv.style.display == "flex") {
+					selDiv.style.display = "none";
+					selButton.innerHTML = "<p style=\"margin: 0; margin-top: -5px;\">⇲</p>";
+				}
+				else {
+					selDiv.style.display = "flex";
+					selButton.innerHTML = "<p style=\"margin: 0; margin-top: -5px;\">⇱</p>";
+				}
+			}
+
+		</script>
+
+		
+		<!-- Script for the on screen console -->
 		<script>
 			function addZero(i) {
 				if (i < 10) {i = "0" + i}
@@ -90,6 +119,8 @@
 			}
 		</script>
 
+		
+		<!-- Script that query all mappoints from the api and put them on the path selec dropdowns -->
 		<script>
 		fetch("https://finnsapi.developvn.click/api/mappoints")
 			.then((res) =>  res.text())
@@ -139,6 +170,8 @@
 			.catch((e) => console.error(e))
 		</script>
 
+
+		<!-- Define what the main script does when the render is de-synced and what it will do when it's fixed -->
 		<script>
 			let warn = false;
 			let warnWindow = document.querySelector("#warnWindow");
@@ -159,6 +192,7 @@
 		</script>
 
 
+		<!-- importmap for the main script -->
 		<script type="importmap">
 			{
 				"imports": {
@@ -170,7 +204,6 @@
 		<script type="module" src="script.js"></script>
 
 		<!--button onclick="resetCompass()" style="position: fixed; left: 0; up: 0;">Reset</button-->
-		
-		<span style="position: fixed; bottom: 0; left: 0;">Made with <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a></span>
+		<span style="display: none; position: fixed; bottom: 0; left: 0;">Made with <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a></span>
 	</body>
 </html>
